@@ -16,17 +16,8 @@ export default function Auth() {
   const [fullName, setFullName] = useState("");
   const navigate = useNavigate();
 
-  const validateEmail = (email: string) => {
-    return email.endsWith("@student.egerton.ac.ke");
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!validateEmail(email)) {
-      toast.error("Please use your @student.egerton.ac.ke email address");
-      return;
-    }
 
     setLoading(true);
 
@@ -116,8 +107,8 @@ export default function Auth() {
               </CardTitle>
               <CardDescription>
                 {isLogin
-                  ? "Sign in with your university email"
-                  : "Register using your @student.egerton.ac.ke email"}
+                  ? "Sign in to your account"
+                  : "Create a new account to get started"}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -139,13 +130,13 @@ export default function Auth() {
                   </div>
                 )}
                 <div className="space-y-2">
-                  <Label htmlFor="email">University Email</Label>
+                  <Label htmlFor="email">Email</Label>
                   <div className="relative">
                     <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                     <Input
                       id="email"
                       type="email"
-                      placeholder="you@student.egerton.ac.ke"
+                      placeholder="you@example.com"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       className="pl-10"
