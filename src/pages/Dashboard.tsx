@@ -23,13 +23,14 @@ export default function Dashboard() {
   const navigate = useNavigate();
   const [application, setApplication] = useState<any>(null);
   const [notifications, setNotifications] = useState<any[]>([]);
+  const [lostCount, setLostCount] = useState(0);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!user) return;
 
     const fetchData = async () => {
-      const [appRes, notifRes] = await Promise.all([
+      const [appRes, notifRes, lostRes] = await Promise.all([
         supabase
           .from("id_applications")
           .select("*")
@@ -43,12 +44,17 @@ export default function Dashboard() {
           .eq("user_id", user.id)
           .order("created_at", { ascending: false })
           .limit(5),
+        supabase
+          .from("lost_reports")
+          .select("id", { count: "exact", head: true })
+          .eq("user_id", user.id)
+          .in("status", ["reported", "searching"]),
       ]);
       setApplication(appRes.data);
       setNotifications(notifRes.data || []);
+      setLostCount(lostRes.count || 0);
       setLoading(false);
     };
-
     fetchData();
 
     // Realtime subscription
@@ -112,7 +118,7 @@ export default function Dashboard() {
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Lost Reports</p>
-              <p className="font-semibold">0 active</p>
+              <p className="font-semibold">{lostCount} active</p>
             </div>
           </CardContent>
         </Card>

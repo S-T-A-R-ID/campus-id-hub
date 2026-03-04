@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Download, CreditCard, RotateCcw } from "lucide-react";
+import { QRCodeSVG } from "qrcode.react";
 
 export default function VirtualID() {
   const { user, profile } = useAuth();
@@ -49,6 +50,8 @@ export default function VirtualID() {
   const expiryDate = application.expires_at
     ? new Date(application.expires_at).toLocaleDateString()
     : new Date(new Date().setFullYear(new Date().getFullYear() + 4)).toLocaleDateString();
+
+  const verifyUrl = `${window.location.origin}/verify/${application.id}`;
 
   return (
     <div className="space-y-6 animate-fade-in max-w-3xl">
@@ -123,9 +126,7 @@ export default function VirtualID() {
                   <div className="text-xs font-semibold">{expiryDate}</div>
                 </div>
                 <div className="h-16 w-16 rounded-lg bg-primary-foreground flex items-center justify-center p-1">
-                  <div className="text-[6px] text-primary text-center font-mono leading-tight break-all">
-                    QR CODE
-                  </div>
+                  <QRCodeSVG value={verifyUrl} size={56} level="M" />
                 </div>
               </div>
             </div>
@@ -152,7 +153,7 @@ export default function VirtualID() {
                   </div>
                 </div>
                 <div className="text-center text-[8px] text-primary-foreground/40">
-                  Verify at: {window.location.origin}/verify/{application.id}
+                  Verify at: {verifyUrl}
                 </div>
               </div>
             </div>
