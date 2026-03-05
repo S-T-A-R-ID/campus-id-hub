@@ -11,9 +11,11 @@ import Dashboard from "./pages/Dashboard";
 import Application from "./pages/Application";
 import VirtualID from "./pages/VirtualID";
 import LostID from "./pages/LostID";
+import Profile from "./pages/Profile";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import Verification from "./pages/admin/Verification";
 import Management from "./pages/admin/Management";
+import AuditLogs from "./pages/admin/AuditLogs";
 import Verify from "./pages/Verify";
 import NotFound from "./pages/NotFound";
 
@@ -50,12 +52,14 @@ const App = () => (
               <Route path="/application" element={<Application />} />
               <Route path="/virtual-id" element={<VirtualID />} />
               <Route path="/lost-id" element={<LostID />} />
+              <Route path="/profile" element={<Profile />} />
             </Route>
 
             <Route element={<ProtectedRoute adminOnly><AppLayout /></ProtectedRoute>}>
               <Route path="/admin" element={<AdminDashboard />} />
               <Route path="/admin/verification" element={<Verification />} />
               <Route path="/admin/management" element={<Management />} />
+              <Route path="/admin/audit" element={<AuditLogs />} />
             </Route>
 
             <Route path="*" element={<NotFound />} />

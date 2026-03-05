@@ -13,12 +13,14 @@ const studentLinks = [
   { to: "/application", label: "Apply for ID", icon: FileText },
   { to: "/virtual-id", label: "Virtual ID", icon: CreditCard },
   { to: "/lost-id", label: "Lost ID", icon: AlertTriangle },
+  { to: "/profile", label: "Profile Settings", icon: Users },
 ];
 
 const adminLinks = [
   { to: "/admin", label: "Admin Dashboard", icon: Shield },
   { to: "/admin/verification", label: "Verification", icon: CheckSquare },
   { to: "/admin/management", label: "ID Management", icon: Users },
+  { to: "/admin/audit", label: "Audit Logs", icon: FileText },
 ];
 
 export default function AppSidebar({ onClose }: { onClose?: () => void }) {

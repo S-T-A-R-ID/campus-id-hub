@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { Outlet } from "react-router-dom";
 import AppSidebar from "./AppSidebar";
-import { Bell, Menu, X } from "lucide-react";
+import { Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth";
 import { useIsMobile } from "@/hooks/use-mobile";
+import NotificationsDropdown from "./NotificationsDropdown";
 
 export default function AppLayout() {
   const { profile } = useAuth();
@@ -13,22 +14,11 @@ export default function AppLayout() {
 
   return (
     <div className="flex h-screen overflow-hidden">
-      {/* Mobile overlay */}
       {isMobile && sidebarOpen && (
-        <div
-          className="fixed inset-0 z-40 bg-black/50"
-          onClick={() => setSidebarOpen(false)}
-        />
+        <div className="fixed inset-0 z-40 bg-black/50" onClick={() => setSidebarOpen(false)} />
       )}
 
-      {/* Sidebar */}
-      <div
-        className={
-          isMobile
-            ? `fixed inset-y-0 left-0 z-50 transform transition-transform duration-200 ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}`
-            : ""
-        }
-      >
+      <div className={isMobile ? `fixed inset-y-0 left-0 z-50 transform transition-transform duration-200 ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}` : ""}>
         <AppSidebar onClose={() => setSidebarOpen(false)} />
       </div>
 
@@ -44,9 +34,7 @@ export default function AppLayout() {
               Welcome, {profile?.full_name || "Student"}
             </h2>
           </div>
-          <Button variant="ghost" size="icon" className="relative">
-            <Bell className="h-5 w-5" />
-          </Button>
+          <NotificationsDropdown />
         </header>
         <main className="flex-1 overflow-y-auto p-4 sm:p-6 bg-background">
           <Outlet />

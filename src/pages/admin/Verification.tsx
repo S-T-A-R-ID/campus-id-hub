@@ -41,6 +41,9 @@ export default function Verification() {
     if (!user) return;
     setActionLoading(appId);
 
+    const app = applications.find((a) => a.id === appId);
+    const prof = app ? profiles[app.user_id] : null;
+
     const updateData: any = {
       status: action,
       admin_comment: comment || null,
@@ -56,6 +59,14 @@ export default function Verification() {
 
     if (error) toast.error(error.message);
     else {
+      // Log audit trail
+      await supabase.from("audit_logs").insert({
+        action,
+        admin_id: user.id,
+        target_id: appId,
+        target_table: "id_applications",
+        details: { student_name: prof?.full_name || "Unknown", comment: comment || null },
+      });
       toast.success(`Application ${action}`);
       setComment("");
       setSelected(null);
