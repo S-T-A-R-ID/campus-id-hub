@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { Search, Eye, Loader2 } from "lucide-react";
+import { Search, Eye, Loader2, Download } from "lucide-react";
 
 const statusFlow = ["submitted", "verified", "approved", "printed", "ready", "collected", "rejected"] as const;
 
@@ -59,6 +59,9 @@ export default function Management() {
     if (!user) return;
     setActionLoading(true);
 
+    const app = applications.find((a) => a.id === appId);
+    const prof = app ? profiles[app.user_id] : null;
+
     const updateData: any = {
       status: newStatus,
       admin_comment: comment || null,
@@ -77,12 +80,63 @@ export default function Management() {
     if (error) {
       toast.error(error.message);
     } else {
+      // Audit log
+      await supabase.from("audit_logs").insert({
+        action: newStatus,
+        admin_id: user.id,
+        target_id: appId,
+        target_table: "id_applications",
+        details: { student_name: prof?.full_name || "Unknown", comment: comment || null },
+      });
+
+      // Notify student
+      const statusMessages: Record<string, string> = {
+        verified: "Your ID application has been verified and is under review.",
+        approved: "Your student ID has been approved! View your Virtual ID now.",
+        printed: "Your student ID card has been printed.",
+        ready: "Your student ID is ready for collection at the campus office.",
+        collected: "Your student ID has been marked as collected.",
+        rejected: `Your ID application has been rejected.${comment ? ` Reason: ${comment}` : ""}`,
+      };
+      if (app && statusMessages[newStatus]) {
+        await supabase.from("notifications").insert({
+          user_id: app.user_id,
+          title: `ID Status: ${newStatus.charAt(0).toUpperCase() + newStatus.slice(1)}`,
+          message: statusMessages[newStatus],
+          link: newStatus === "approved" ? "/virtual-id" : "/dashboard",
+        });
+      }
+
       toast.success(`Status updated to ${newStatus}`);
       setSelected(null);
       setComment("");
       fetchData();
     }
     setActionLoading(false);
+  };
+
+  const exportCSV = () => {
+    const rows = filtered.map((app) => {
+      const prof = profiles[app.user_id];
+      return [
+        prof?.full_name || "",
+        prof?.reg_number || "",
+        prof?.faculty || "",
+        prof?.course || "",
+        prof?.campus || "",
+        app.status,
+        app.submitted_at ? new Date(app.submitted_at).toLocaleDateString() : "",
+        app.card_number || "CARD-" + app.id.slice(0, 8).toUpperCase(),
+      ].map((v) => `"${v}"`).join(",");
+    });
+    const csv = ["Name,Reg Number,Faculty,Course,Campus,Status,Submitted,Card Number", ...rows].join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `id-applications-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
   };
 
   const getNextStatuses = (current: string): string[] => {
@@ -137,6 +191,9 @@ export default function Management() {
             ))}
           </SelectContent>
         </Select>
+        <Button variant="outline" size="sm" onClick={exportCSV} className="gap-2">
+          <Download className="h-4 w-4" /> Export CSV
+        </Button>
       </div>
 
       <Card>

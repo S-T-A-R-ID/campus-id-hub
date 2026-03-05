@@ -16,6 +16,7 @@ import AdminDashboard from "./pages/admin/AdminDashboard";
 import Verification from "./pages/admin/Verification";
 import Management from "./pages/admin/Management";
 import AuditLogs from "./pages/admin/AuditLogs";
+import LostIDManagement from "./pages/admin/LostIDManagement";
 import Verify from "./pages/Verify";
 import NotFound from "./pages/NotFound";
 
@@ -60,6 +61,7 @@ const App = () => (
               <Route path="/admin/verification" element={<Verification />} />
               <Route path="/admin/management" element={<Management />} />
               <Route path="/admin/audit" element={<AuditLogs />} />
+              <Route path="/admin/lost-ids" element={<LostIDManagement />} />
             </Route>
 
             <Route path="*" element={<NotFound />} />

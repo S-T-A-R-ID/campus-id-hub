@@ -67,6 +67,19 @@ export default function Verification() {
         target_table: "id_applications",
         details: { student_name: prof?.full_name || "Unknown", comment: comment || null },
       });
+
+      // Send notification to student
+      const notifTitle = action === "approved" ? "ID Application Approved!" : "ID Application Rejected";
+      const notifMessage = action === "approved"
+        ? "Your student ID application has been approved. You can now view your Virtual ID."
+        : `Your student ID application has been rejected.${comment ? ` Reason: ${comment}` : ""}`;
+      await supabase.from("notifications").insert({
+        user_id: app.user_id,
+        title: notifTitle,
+        message: notifMessage,
+        link: action === "approved" ? "/virtual-id" : "/application",
+      });
+
       toast.success(`Application ${action}`);
       setComment("");
       setSelected(null);

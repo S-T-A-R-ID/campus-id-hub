@@ -20,6 +20,7 @@ const adminLinks = [
   { to: "/admin", label: "Admin Dashboard", icon: Shield },
   { to: "/admin/verification", label: "Verification", icon: CheckSquare },
   { to: "/admin/management", label: "ID Management", icon: Users },
+  { to: "/admin/lost-ids", label: "Lost ID Reports", icon: AlertTriangle },
   { to: "/admin/audit", label: "Audit Logs", icon: FileText },
 ];
 

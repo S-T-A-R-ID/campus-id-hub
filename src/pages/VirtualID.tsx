@@ -1,16 +1,19 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Download, CreditCard, RotateCcw } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
+import { toPng } from "html-to-image";
+import { toast } from "sonner";
 
 export default function VirtualID() {
   const { user, profile } = useAuth();
   const [application, setApplication] = useState<any>(null);
   const [showBack, setShowBack] = useState(false);
   const [loading, setLoading] = useState(true);
+  const cardRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -27,6 +30,20 @@ export default function VirtualID() {
         setLoading(false);
       });
   }, [user]);
+
+  const handleDownload = async () => {
+    if (!cardRef.current) return;
+    try {
+      const dataUrl = await toPng(cardRef.current, { pixelRatio: 3 });
+      const a = document.createElement("a");
+      a.href = dataUrl;
+      a.download = `egerton-id-${profile?.reg_number || "card"}.png`;
+      a.click();
+      toast.success("ID card downloaded!");
+    } catch {
+      toast.error("Failed to download card");
+    }
+  };
 
   if (loading) {
     return <div className="flex items-center justify-center h-64"><div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" /></div>;
@@ -64,82 +81,77 @@ export default function VirtualID() {
           <Button variant="outline" size="sm" onClick={() => setShowBack(!showBack)} className="gap-2">
             <RotateCcw className="h-4 w-4" /> Flip
           </Button>
-          <Button size="sm" className="gap-2">
+          <Button size="sm" className="gap-2" onClick={handleDownload}>
             <Download className="h-4 w-4" /> Download
           </Button>
         </div>
       </div>
 
       <div className="flex justify-center">
-        <div className="w-[400px] perspective-1000">
+        <div className="w-[400px] perspective-1000" ref={cardRef}>
           {!showBack ? (
-            /* Front of ID */
-            <div className="rounded-2xl overflow-hidden shadow-2xl bg-gradient-to-br from-primary via-primary/95 to-egerton-dark text-primary-foreground">
-              {/* Header */}
-              <div className="px-6 pt-5 pb-3 flex items-center gap-3 border-b border-primary-foreground/10">
-                <div className="h-12 w-12 rounded-full bg-primary-foreground/20 flex items-center justify-center">
+            <div className="rounded-2xl overflow-hidden shadow-2xl bg-gradient-to-br from-[hsl(152,100%,26%)] via-[hsl(152,100%,26%,0.95)] to-[hsl(152,40%,12%)] text-white">
+              <div className="px-6 pt-5 pb-3 flex items-center gap-3 border-b border-white/10">
+                <div className="h-12 w-12 rounded-full bg-white/20 flex items-center justify-center">
                   <span className="text-lg font-bold">EU</span>
                 </div>
                 <div>
                   <div className="font-bold text-sm tracking-wide">EGERTON UNIVERSITY</div>
-                  <div className="text-[10px] text-primary-foreground/60 uppercase tracking-wider">Student Identification Card</div>
+                  <div className="text-[10px] text-white/60 uppercase tracking-wider">Student Identification Card</div>
                 </div>
               </div>
 
-              {/* Body */}
               <div className="p-6 flex gap-5">
-                <div className="h-28 w-24 rounded-lg overflow-hidden bg-primary-foreground/10 shrink-0 border-2 border-primary-foreground/20">
+                <div className="h-28 w-24 rounded-lg overflow-hidden bg-white/10 shrink-0 border-2 border-white/20">
                   {application.photo_url ? (
-                    <img src={application.photo_url} alt="Student" className="h-full w-full object-cover" />
+                    <img src={application.photo_url} alt="Student" className="h-full w-full object-cover" crossOrigin="anonymous" />
                   ) : (
-                    <div className="h-full w-full flex items-center justify-center text-primary-foreground/30 text-xs">No Photo</div>
+                    <div className="h-full w-full flex items-center justify-center text-white/30 text-xs">No Photo</div>
                   )}
                 </div>
                 <div className="space-y-1.5 min-w-0">
                   <div>
-                    <div className="text-[10px] uppercase text-primary-foreground/50">Name</div>
+                    <div className="text-[10px] uppercase text-white/50">Name</div>
                     <div className="font-bold text-sm truncate">{profile?.full_name}</div>
                   </div>
                   <div>
-                    <div className="text-[10px] uppercase text-primary-foreground/50">Reg No.</div>
+                    <div className="text-[10px] uppercase text-white/50">Reg No.</div>
                     <div className="font-semibold text-xs">{profile?.reg_number || "—"}</div>
                   </div>
                   <div>
-                    <div className="text-[10px] uppercase text-primary-foreground/50">Course</div>
+                    <div className="text-[10px] uppercase text-white/50">Course</div>
                     <div className="text-xs truncate">{profile?.course || "—"}</div>
                   </div>
                   <div>
-                    <div className="text-[10px] uppercase text-primary-foreground/50">Faculty</div>
+                    <div className="text-[10px] uppercase text-white/50">Faculty</div>
                     <div className="text-xs truncate">{profile?.faculty || "—"}</div>
                   </div>
                 </div>
               </div>
 
-              {/* Footer */}
               <div className="px-6 pb-5 flex items-center justify-between">
                 <div>
-                  <div className="text-[10px] text-primary-foreground/50">Campus</div>
+                  <div className="text-[10px] text-white/50">Campus</div>
                   <div className="text-xs">{profile?.campus || "Main Campus"}</div>
                 </div>
                 <div>
-                  <div className="text-[10px] text-primary-foreground/50">Valid Until</div>
+                  <div className="text-[10px] text-white/50">Valid Until</div>
                   <div className="text-xs font-semibold">{expiryDate}</div>
                 </div>
-                <div className="h-16 w-16 rounded-lg bg-primary-foreground flex items-center justify-center p-1">
+                <div className="h-16 w-16 rounded-lg bg-white flex items-center justify-center p-1">
                   <QRCodeSVG value={verifyUrl} size={56} level="M" />
                 </div>
               </div>
             </div>
           ) : (
-            /* Back of ID */
-            <div className="rounded-2xl overflow-hidden shadow-2xl bg-gradient-to-br from-primary via-primary/95 to-egerton-dark text-primary-foreground p-6 min-h-[280px] flex flex-col justify-between">
+            <div className="rounded-2xl overflow-hidden shadow-2xl bg-gradient-to-br from-[hsl(152,100%,26%)] via-[hsl(152,100%,26%,0.95)] to-[hsl(152,40%,12%)] text-white p-6 min-h-[280px] flex flex-col justify-between">
               <div className="space-y-3">
                 <div className="text-center">
                   <div className="font-bold text-sm">EGERTON UNIVERSITY</div>
-                  <div className="text-[10px] text-primary-foreground/60">P.O. Box 536 - 20115, Egerton, Kenya</div>
+                  <div className="text-[10px] text-white/60">P.O. Box 536 - 20115, Egerton, Kenya</div>
                 </div>
-                <div className="h-px bg-primary-foreground/20" />
-                <div className="text-[9px] text-primary-foreground/70 space-y-1">
+                <div className="h-px bg-white/20" />
+                <div className="text-[9px] text-white/70 space-y-1">
                   <p>This card is the property of Egerton University.</p>
                   <p>If found, please return to the nearest campus office.</p>
                   <p>This card must be carried at all times within campus premises.</p>
@@ -147,12 +159,12 @@ export default function VirtualID() {
                 </div>
               </div>
               <div className="space-y-2">
-                <div className="h-10 bg-primary-foreground/10 rounded flex items-center justify-center">
+                <div className="h-10 bg-white/10 rounded flex items-center justify-center">
                   <div className="text-[8px] font-mono tracking-widest">
                     {application.card_number || "CARD-" + application.id.slice(0, 8).toUpperCase()}
                   </div>
                 </div>
-                <div className="text-center text-[8px] text-primary-foreground/40">
+                <div className="text-center text-[8px] text-white/40">
                   Verify at: {verifyUrl}
                 </div>
               </div>
