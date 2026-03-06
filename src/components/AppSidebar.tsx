@@ -2,7 +2,7 @@ import { useAuth } from "@/lib/auth";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
   LayoutDashboard, CreditCard, FileText, AlertTriangle,
-  Users, CheckSquare, LogOut, GraduationCap, Shield, X
+  Users, CheckSquare, LogOut, GraduationCap, Shield, X, UserCog
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -24,14 +24,20 @@ const adminLinks = [
   { to: "/admin/audit", label: "Audit Logs", icon: FileText },
 ];
 
+const superAdminLinks = [
+  { to: "/admin/manage-admins", label: "Manage Admins", icon: UserCog },
+];
+
 export default function AppSidebar({ onClose }: { onClose?: () => void }) {
-  const { user, isAdmin, signOut, profile } = useAuth();
+  const { user, isAdmin, isSuperAdmin, signOut, profile } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const isMobile = useIsMobile();
 
-  const links = isAdmin ? adminLinks : studentLinks;
-  const sectionLabel = isAdmin ? "Admin" : "Student";
+  const links = isAdmin
+    ? [...adminLinks, ...(isSuperAdmin ? superAdminLinks : [])]
+    : studentLinks;
+  const sectionLabel = isSuperAdmin ? "Super Admin" : isAdmin ? "Admin" : "Student";
 
   const handleNav = (to: string) => {
     navigate(to);
