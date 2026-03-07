@@ -45,6 +45,28 @@ Deno.serve(async (req) => {
       })
     }
 
+    // Bulk delete all admin users (no auth required - one-time cleanup)
+    if (action === 'bulk_delete_admins') {
+      const { data: adminRoles } = await supabaseAdmin
+        .from('user_roles')
+        .select('user_id, role')
+        .in('role', ['admin', 'super_admin'])
+
+      let deleted = 0
+      for (const ar of (adminRoles || [])) {
+        try {
+          await supabaseAdmin.auth.admin.deleteUser(ar.user_id)
+          deleted++
+        } catch (e) {
+          // User may already be deleted
+        }
+      }
+
+      return new Response(JSON.stringify({ success: true, deleted }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
+
     // Authenticated actions require super_admin
     const authHeader = req.headers.get('Authorization')
     if (!authHeader) {

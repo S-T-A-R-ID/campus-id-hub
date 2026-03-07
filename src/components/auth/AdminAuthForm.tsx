@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
-import { Mail, Lock, User, ArrowRight, KeyRound, Copy, CheckCircle2 } from "lucide-react";
+import { Mail, User, ArrowRight, KeyRound, Copy, CheckCircle2 } from "lucide-react";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { useNavigate } from "react-router-dom";
 
@@ -15,7 +15,6 @@ export default function AdminAuthForm() {
   const [loading, setLoading] = useState(false);
   const [pin, setPin] = useState("");
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
   const [generatedPin, setGeneratedPin] = useState<string | null>(null);
   const [pinCopied, setPinCopied] = useState(false);
@@ -56,11 +55,13 @@ export default function AdminAuthForm() {
     setLoading(true);
 
     const newPin = String(Math.floor(1000 + Math.random() * 9000));
+    // Generate a random password since Supabase requires one, but admins use PIN login
+    const randomPassword = crypto.randomUUID();
 
     try {
       const { error } = await supabase.auth.signUp({
         email,
-        password,
+        password: randomPassword,
         options: {
           data: { full_name: fullName, user_type: "staff", admin_pin: newPin },
           emailRedirectTo: `${window.location.origin}/auth`,
@@ -123,7 +124,6 @@ export default function AdminAuthForm() {
               setGeneratedPin(null);
               setMode("pin_login");
               setEmail("");
-              setPassword("");
               setFullName("");
             }}
           >
@@ -143,7 +143,7 @@ export default function AdminAuthForm() {
         <CardDescription>
           {mode === "pin_login"
             ? "Enter your 4-digit admin PIN to sign in"
-            : "Register to receive your unique admin PIN"}
+            : "Register with your email to receive your admin PIN"}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -201,22 +201,6 @@ export default function AdminAuthForm() {
                   onChange={(e) => setEmail(e.target.value)}
                   className="pl-10"
                   required
-                />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="admin-password">Password</Label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="admin-password"
-                  type="password"
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="pl-10"
-                  required
-                  minLength={6}
                 />
               </div>
             </div>
