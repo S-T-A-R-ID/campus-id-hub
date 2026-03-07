@@ -9,8 +9,9 @@ import { Mail, Lock, User, ArrowRight, KeyRound, Copy, CheckCircle2 } from "luci
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { useNavigate } from "react-router-dom";
 
+const navigate = useNavigate();
+
 export default function AdminAuthForm() {
-  const navigate = useNavigate();
   const [mode, setMode] = useState<"pin_login" | "signup">("pin_login");
   const [loading, setLoading] = useState(false);
   const [pin, setPin] = useState("");
