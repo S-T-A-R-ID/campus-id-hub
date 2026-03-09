@@ -7,28 +7,28 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
-import { AlertTriangle, Loader2, Send } from "lucide-react";
+import { AlertTriangle, Loader2, Send, RefreshCw } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 export default function LostID() {
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
+  const [replacementLoading, setReplacementLoading] = useState<string | null>(null);
   const [reports, setReports] = useState<any[]>([]);
   const [application, setApplication] = useState<any>(null);
   const [form, setForm] = useState({ date_lost: "", circumstances: "", location_lost: "" });
 
-  useEffect(() => {
+  const fetchData = async () => {
     if (!user) return;
-    const fetchData = async () => {
-      const [reportsRes, appRes] = await Promise.all([
-        supabase.from("lost_reports").select("*").eq("user_id", user.id).order("created_at", { ascending: false }),
-        supabase.from("id_applications").select("*").eq("user_id", user.id).in("status", ["approved", "printed", "ready", "collected"]).order("created_at", { ascending: false }).limit(1).maybeSingle(),
-      ]);
-      setReports(reportsRes.data || []);
-      setApplication(appRes.data);
-    };
-    fetchData();
-  }, [user]);
+    const [reportsRes, appRes] = await Promise.all([
+      supabase.from("lost_reports").select("*").eq("user_id", user.id).order("created_at", { ascending: false }),
+      supabase.from("id_applications").select("*").eq("user_id", user.id).in("status", ["approved", "printed", "ready", "collected"]).order("created_at", { ascending: false }).limit(1).maybeSingle(),
+    ]);
+    setReports(reportsRes.data || []);
+    setApplication(appRes.data);
+  };
+
+  useEffect(() => { fetchData(); }, [user]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -47,10 +47,73 @@ export default function LostID() {
     else {
       toast.success("Lost ID report submitted");
       setForm({ date_lost: "", circumstances: "", location_lost: "" });
-      const { data } = await supabase.from("lost_reports").select("*").eq("user_id", user.id).order("created_at", { ascending: false });
-      setReports(data || []);
+      fetchData();
     }
     setLoading(false);
+  };
+
+  const handleRequestReplacement = async (report: any) => {
+    if (!user) return;
+    setReplacementLoading(report.id);
+
+    try {
+      // Update lost report status to replacement_requested
+      const { error: reportError } = await supabase
+        .from("lost_reports")
+        .update({ status: "replacement_requested" })
+        .eq("id", report.id);
+
+      if (reportError) throw reportError;
+
+      // Create a new replacement application copying from the original
+      const { data: originalApp } = await supabase
+        .from("id_applications")
+        .select("*")
+        .eq("id", report.application_id)
+        .single();
+
+      if (originalApp) {
+        const { error: appError } = await supabase.from("id_applications").insert({
+          user_id: user.id,
+          status: "submitted",
+          photo_url: originalApp.photo_url,
+          is_replacement: true,
+          submitted_at: new Date().toISOString(),
+        });
+
+        if (appError) throw appError;
+      }
+
+      toast.success("Replacement ID requested successfully. Your application will be reviewed by admin.");
+      fetchData();
+    } catch (error: any) {
+      toast.error(error.message);
+    } finally {
+      setReplacementLoading(null);
+    }
+  };
+
+  const canRequestReplacement = (report: any) => {
+    return report.status === "not_found";
+  };
+
+  const statusLabel = (status: string) => {
+    const labels: Record<string, string> = {
+      reported: "Reported",
+      searching: "Searching",
+      found: "Found",
+      not_found: "Not Found",
+      replacement_requested: "Replacement Requested",
+      replacement_issued: "Replacement Issued",
+    };
+    return labels[status] || status;
+  };
+
+  const statusVariant = (status: string): "default" | "secondary" | "destructive" | "outline" => {
+    if (status === "found" || status === "replacement_issued") return "default";
+    if (status === "not_found") return "destructive";
+    if (status === "replacement_requested") return "secondary";
+    return "outline";
   };
 
   return (
@@ -103,12 +166,30 @@ export default function LostID() {
           </CardHeader>
           <CardContent className="space-y-3">
             {reports.map((r) => (
-              <div key={r.id} className="flex items-center justify-between p-4 rounded-lg border">
-                <div>
+              <div key={r.id} className="flex items-center justify-between p-4 rounded-lg border gap-3">
+                <div className="min-w-0">
                   <p className="text-sm font-medium">Report from {new Date(r.date_lost).toLocaleDateString()}</p>
                   <p className="text-xs text-muted-foreground">{r.location_lost || "Location not specified"}</p>
                 </div>
-                <Badge variant="outline">{r.status}</Badge>
+                <div className="flex items-center gap-2 shrink-0">
+                  <Badge variant={statusVariant(r.status)}>{statusLabel(r.status)}</Badge>
+                  {canRequestReplacement(r) && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="gap-1.5"
+                      disabled={replacementLoading === r.id}
+                      onClick={() => handleRequestReplacement(r)}
+                    >
+                      {replacementLoading === r.id ? (
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                      ) : (
+                        <RefreshCw className="h-3 w-3" />
+                      )}
+                      Request Replacement
+                    </Button>
+                  )}
+                </div>
               </div>
             ))}
           </CardContent>

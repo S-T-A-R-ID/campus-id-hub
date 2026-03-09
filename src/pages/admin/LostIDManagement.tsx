@@ -81,15 +81,16 @@ export default function LostIDManagement() {
       const messages: Record<string, string> = {
         searching: "Your lost ID report is being investigated.",
         found: "Great news! Your lost student ID has been found. Visit the campus office to collect it.",
-        not_found: "Unfortunately, your lost student ID could not be found. You may apply for a replacement.",
-        replacement_issued: "Your replacement student ID has been issued.",
+        not_found: "Unfortunately, your lost student ID could not be found. You may request a replacement from your Lost ID page.",
+        replacement_requested: "Your replacement ID request has been received and is being processed.",
+        replacement_issued: "Your replacement student ID has been issued. You can view it in your Virtual ID page.",
       };
       if (report && messages[newStatus]) {
         await supabase.from("notifications").insert({
           user_id: report.user_id,
-          title: `Lost ID: ${newStatus.replace("_", " ").charAt(0).toUpperCase() + newStatus.replace("_", " ").slice(1)}`,
+          title: `Lost ID: ${newStatus.replace(/_/g, " ").replace(/^\w/, (c: string) => c.toUpperCase())}`,
           message: messages[newStatus],
-          link: "/lost-id",
+          link: newStatus === "replacement_issued" ? "/virtual-id" : "/lost-id",
         });
       }
 
