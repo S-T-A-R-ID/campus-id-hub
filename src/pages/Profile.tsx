@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Loader2, Save, Upload, Camera } from "lucide-react";
+import { Loader2, Save, Upload, Camera, Lock, Eye, EyeOff } from "lucide-react";
 
 const faculties = [
   "Faculty of Agriculture",
