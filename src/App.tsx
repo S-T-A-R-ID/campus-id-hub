@@ -19,6 +19,7 @@ import AuditLogs from "./pages/admin/AuditLogs";
 import LostIDManagement from "./pages/admin/LostIDManagement";
 import AdminApproval from "./pages/admin/AdminApproval";
 import Verify from "./pages/Verify";
+import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -48,6 +49,7 @@ const App = () => (
             <Route path="/" element={<RootRedirect />} />
             <Route path="/auth" element={<AuthRedirect />} />
             <Route path="/verify/:id" element={<Verify />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
             
             <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
               <Route path="/dashboard" element={<Dashboard />} />
