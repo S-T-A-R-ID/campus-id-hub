@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { Mail, Lock, User, ArrowRight, Eye, EyeOff, ArrowLeft } from "lucide-react";
+import PasswordStrengthIndicator from "./PasswordStrengthIndicator";
 
 export default function StudentAuthForm() {
   const [isLogin, setIsLogin] = useState(true);
@@ -198,6 +199,7 @@ export default function StudentAuthForm() {
               </button>
             </div>
           </div>
+          {!isLogin && <PasswordStrengthIndicator password={password} />}
           <Button type="submit" className="w-full gap-2" disabled={loading}>
             {loading ? (
               <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent" />
