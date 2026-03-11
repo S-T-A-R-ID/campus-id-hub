@@ -36,6 +36,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+  const [isAdminApproved, setIsAdminApproved] = useState(false);
   const [profile, setProfile] = useState<any>(null);
   const [roleLoaded, setRoleLoaded] = useState(false);
 
