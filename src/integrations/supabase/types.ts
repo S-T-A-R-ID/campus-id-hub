@@ -20,6 +20,7 @@ export type Database = {
           id: string
           is_approved: boolean | null
           pin: string
+          pin_changed: boolean | null
           user_id: string
         }
         Insert: {
@@ -27,6 +28,7 @@ export type Database = {
           id?: string
           is_approved?: boolean | null
           pin: string
+          pin_changed?: boolean | null
           user_id: string
         }
         Update: {
@@ -34,6 +36,7 @@ export type Database = {
           id?: string
           is_approved?: boolean | null
           pin?: string
+          pin_changed?: boolean | null
           user_id?: string
         }
         Relationships: []
@@ -125,6 +128,27 @@ export type Database = {
           submitted_at?: string | null
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      login_attempts: {
+        Row: {
+          attempted_at: string
+          id: string
+          identifier: string
+          success: boolean
+        }
+        Insert: {
+          attempted_at?: string
+          id?: string
+          identifier: string
+          success?: boolean
+        }
+        Update: {
+          attempted_at?: string
+          id?: string
+          identifier?: string
+          success?: boolean
         }
         Relationships: []
       }
