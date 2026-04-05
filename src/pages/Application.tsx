@@ -287,7 +287,6 @@ export default function Application() {
                 <p className="text-xs text-destructive">{validateKenyaPhone(form.phone).error}</p>
               )}
             </div>
-            </div>
           </div>
 
           {!alreadySubmitted && (
