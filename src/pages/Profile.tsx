@@ -240,7 +240,6 @@ export default function Profile() {
                 <p className="text-xs text-destructive">{validateKenyaPhone(form.phone).error}</p>
               )}
             </div>
-            </div>
           </div>
 
           <div className="flex items-center gap-3 pt-2">
