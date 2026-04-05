@@ -227,7 +227,19 @@ export default function Profile() {
             </div>
             <div className="space-y-2">
               <Label>Phone Number</Label>
-              <Input placeholder="+254..." value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
+              <Input
+                placeholder="+254712345678"
+                value={form.phone}
+                onChange={(e) => {
+                  const val = e.target.value.replace(/[^\d+]/g, "");
+                  setForm({ ...form, phone: val });
+                }}
+                maxLength={13}
+              />
+              {form.phone && !validateKenyaPhone(form.phone).valid && (
+                <p className="text-xs text-destructive">{validateKenyaPhone(form.phone).error}</p>
+              )}
+            </div>
             </div>
           </div>
 
