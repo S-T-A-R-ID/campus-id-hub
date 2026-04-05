@@ -75,6 +75,7 @@ const App = () => (
             <Route path="/auth" element={<AuthRedirect />} />
             <Route path="/verify/:id" element={<Verify />} />
             <Route path="/reset-password" element={<ResetPassword />} />
+            <Route path="/change-pin" element={<ProtectedRoute adminOnly><ChangePin /></ProtectedRoute>} />
             
             <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
               <Route path="/dashboard" element={<Dashboard />} />
