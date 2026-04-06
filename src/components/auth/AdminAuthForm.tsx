@@ -41,12 +41,17 @@ export default function AdminAuthForm() {
     }
     setLoading(true);
     try {
-      const { error } = await supabase.auth.verifyOtp({
-        email: otpEmail,
-        token: otp,
-        type: "email",
+      const { data, error } = await supabase.functions.invoke("verify-otp", {
+        body: { email: otpEmail, token: otp },
       });
-      if (error) throw error;
+      if (error) throw new Error(data?.error || "Verification failed");
+      if (data?.error) throw new Error(data.error);
+      if (data?.session) {
+        await supabase.auth.setSession({
+          access_token: data.session.access_token,
+          refresh_token: data.session.refresh_token,
+        });
+      }
       toast.success("Welcome back, Admin!");
 
       if (needsPinChange) {
@@ -55,7 +60,7 @@ export default function AdminAuthForm() {
         navigate("/admin", { replace: true });
       }
     } catch (error: any) {
-      toast.error("Invalid or expired verification code");
+      toast.error(error.message || "Invalid or expired verification code");
     } finally {
       setLoading(false);
     }
@@ -77,18 +82,18 @@ export default function AdminAuthForm() {
       if (error) throw new Error(data?.error || "Login failed");
       if (data?.error) throw new Error(data.error);
 
-      // PIN verified - now send OTP for 2FA
-      const { error: otpError } = await supabase.auth.signInWithOtp({
-        email: data.email,
-        options: { shouldCreateUser: false },
+      // PIN verified - now send OTP for 2FA via custom edge function
+      const { data: otpData, error: otpError } = await supabase.functions.invoke("send-otp", {
+        body: { email: data.email },
       });
 
-      if (otpError) throw otpError;
+      if (otpError) throw new Error(otpData?.error || "Failed to send verification code");
+      if (otpData?.error) throw new Error(otpData.error);
 
       setOtpEmail(data.email);
       setNeedsPinChange(!data.pin_changed);
       setOtpStep(true);
-      toast.success("Verification code sent to your email!");
+      toast.success("A 6-digit verification code has been sent to your email!");
     } catch (error: any) {
       toast.error(error.message);
     } finally {
