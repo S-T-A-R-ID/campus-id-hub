@@ -41,12 +41,17 @@ export default function AdminAuthForm() {
     }
     setLoading(true);
     try {
-      const { error } = await supabase.auth.verifyOtp({
-        email: otpEmail,
-        token: otp,
-        type: "email",
+      const { data, error } = await supabase.functions.invoke("verify-otp", {
+        body: { email: otpEmail, token: otp },
       });
-      if (error) throw error;
+      if (error) throw new Error(data?.error || "Verification failed");
+      if (data?.error) throw new Error(data.error);
+      if (data?.session) {
+        await supabase.auth.setSession({
+          access_token: data.session.access_token,
+          refresh_token: data.session.refresh_token,
+        });
+      }
       toast.success("Welcome back, Admin!");
 
       if (needsPinChange) {
@@ -55,7 +60,7 @@ export default function AdminAuthForm() {
         navigate("/admin", { replace: true });
       }
     } catch (error: any) {
-      toast.error("Invalid or expired verification code");
+      toast.error(error.message || "Invalid or expired verification code");
     } finally {
       setLoading(false);
     }
