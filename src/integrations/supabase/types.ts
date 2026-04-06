@@ -90,6 +90,7 @@ export type Database = {
           submitted_at: string | null
           updated_at: string
           user_id: string
+          verification_token: string | null
         }
         Insert: {
           admin_comment?: string | null
@@ -109,6 +110,7 @@ export type Database = {
           submitted_at?: string | null
           updated_at?: string
           user_id: string
+          verification_token?: string | null
         }
         Update: {
           admin_comment?: string | null
@@ -128,6 +130,7 @@ export type Database = {
           submitted_at?: string | null
           updated_at?: string
           user_id?: string
+          verification_token?: string | null
         }
         Relationships: []
       }
