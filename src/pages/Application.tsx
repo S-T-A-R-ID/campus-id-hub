@@ -112,6 +112,18 @@ export default function Application() {
       toast.error(phoneValidation.error);
       return;
     }
+    const nameVal = validateStudentName(form.full_name);
+    if (!nameVal.valid) {
+      toast.error(nameVal.error);
+      return;
+    }
+    if (form.reg_number) {
+      const regVal = validateRegNumber(form.reg_number);
+      if (!regVal.valid) {
+        toast.error(regVal.error);
+        return;
+      }
+    }
 
     setLoading(true);
 
