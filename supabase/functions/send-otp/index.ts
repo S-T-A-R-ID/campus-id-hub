@@ -142,14 +142,44 @@ Deno.serve(async (req) => {
     })
 
     if (!resendResponse.ok) {
-      const resendError = await resendResponse.text()
-      console.error('Resend gateway error:', resendResponse.status, resendError)
-      // Roll back the OTP record so cooldown doesn't block retries
+      const resendErrorText = await resendResponse.text()
+      console.error('Resend gateway error:', resendResponse.status, resendErrorText)
+
       if (otpRecord?.id) {
         await supabaseAdmin.from('otp_codes').delete().eq('id', otpRecord.id)
       }
-      return new Response(JSON.stringify({ error: 'Failed to send verification email. Ensure the recipient email is valid.' }), {
-        status: 500,
+
+      let providerMessage = 'Failed to send verification email.'
+      try {
+        const parsedError = JSON.parse(resendErrorText)
+        providerMessage = parsedError?.message || parsedError?.error || parsedError?.details || providerMessage
+      } catch {
+        if (resendErrorText.trim()) {
+          providerMessage = resendErrorText.trim()
+        }
+      }
+
+      const normalizedProviderMessage = providerMessage.toLowerCase()
+      const isCredentialError =
+        normalizedProviderMessage.includes('credential not found') ||
+        normalizedProviderMessage.includes('unauthorized')
+
+      const isResendTestSenderRestriction =
+        fromEmail.toLowerCase() === 'onboarding@resend.dev' &&
+        !isCredentialError &&
+        (
+          normalizedProviderMessage.includes('testing') ||
+          normalizedProviderMessage.includes('sandbox') ||
+          normalizedProviderMessage.includes('own email') ||
+          normalizedProviderMessage.includes('verify a domain')
+        )
+
+      const userFacingError = isResendTestSenderRestriction
+        ? 'OTP email delivery is blocked for this recipient while using the Resend test sender onboarding@resend.dev. Verify your own sending domain to send codes to student and staff emails.'
+        : providerMessage
+
+      return new Response(JSON.stringify({ error: userFacingError }), {
+        status: resendResponse.status >= 400 && resendResponse.status < 600 ? resendResponse.status : 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
     }
