@@ -131,7 +131,11 @@ Deno.serve(async (req) => {
     if (!resendResponse.ok) {
       const resendError = await resendResponse.text()
       console.error('Resend API error:', resendResponse.status, resendError)
-      return new Response(JSON.stringify({ error: 'Failed to send verification email' }), {
+      // Roll back the OTP record so cooldown doesn't block retries
+      if (otpRecord?.id) {
+        await supabaseAdmin.from('otp_codes').delete().eq('id', otpRecord.id)
+      }
+      return new Response(JSON.stringify({ error: 'Failed to send verification email. Ensure the recipient email is valid.' }), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
