@@ -7,6 +7,7 @@ const corsHeaders = {
 
 const OTP_COOLDOWN_SECONDS = 60
 const OTP_EXPIRY_MINUTES = 5
+const GATEWAY_URL = 'https://connector-gateway.lovable.dev/resend'
 
 async function hashOtp(otp: string): Promise<string> {
   const encoder = new TextEncoder()
@@ -36,11 +37,21 @@ Deno.serve(async (req) => {
       })
     }
 
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(email)) {
+      return new Response(JSON.stringify({ error: 'Invalid email format' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
+
     const normalizedEmail = email.toLowerCase().trim()
 
     const resendApiKey = Deno.env.get('RESEND_API_KEY')
-    if (!resendApiKey) {
-      console.error('RESEND_API_KEY is not configured')
+    const lovableApiKey = Deno.env.get('LOVABLE_API_KEY')
+    if (!resendApiKey || !lovableApiKey) {
+      console.error('RESEND_API_KEY or LOVABLE_API_KEY is not configured')
       return new Response(JSON.stringify({ error: 'Email service not configured' }), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -61,6 +72,7 @@ Deno.serve(async (req) => {
       .select('id')
       .eq('email', normalizedEmail)
       .gte('created_at', cooldownCutoff)
+      .eq('is_used', false)
       .limit(1)
 
     if (recentOtp && recentOtp.length > 0) {
@@ -91,7 +103,7 @@ Deno.serve(async (req) => {
       otp_hash: otpHash,
     }).select('id').single()
 
-    // Send OTP via Resend API
+    // Send OTP via Resend connector gateway
     const emailHtml = `
       <div style="font-family: Arial, sans-serif; max-width: 480px; margin: 0 auto; padding: 32px; background: #ffffff;">
         <div style="text-align: center; margin-bottom: 24px;">
@@ -114,11 +126,12 @@ Deno.serve(async (req) => {
       </div>
     `
 
-    const resendResponse = await fetch('https://api.resend.com/emails', {
+    const resendResponse = await fetch(`${GATEWAY_URL}/emails`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${resendApiKey}`,
+        'Authorization': `Bearer ${lovableApiKey}`,
+        'X-Connection-Api-Key': resendApiKey,
       },
       body: JSON.stringify({
         from: `Egerton Digital ID <${fromEmail}>`,
@@ -130,7 +143,7 @@ Deno.serve(async (req) => {
 
     if (!resendResponse.ok) {
       const resendError = await resendResponse.text()
-      console.error('Resend API error:', resendResponse.status, resendError)
+      console.error('Resend gateway error:', resendResponse.status, resendError)
       // Roll back the OTP record so cooldown doesn't block retries
       if (otpRecord?.id) {
         await supabaseAdmin.from('otp_codes').delete().eq('id', otpRecord.id)
