@@ -21,7 +21,10 @@ export function ProtectedRoute({
     );
   }
 
-  if (!user) return <Navigate to="/auth" replace />;
+  if (!user) {
+    if (adminOnly || superAdminOnly) return <Navigate to="/auth?portal=admin" replace />;
+    return <Navigate to="/auth" replace />;
+  }
 
   // Show pending approval screen for unapproved admins
   if (isAdmin && !isSuperAdmin && !isAdminApproved && (adminOnly || superAdminOnly)) {

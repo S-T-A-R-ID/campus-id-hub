@@ -349,7 +349,7 @@ export default function AdminAuthForm() {
                 <Input
                   id="reset-email"
                   type="email"
-                  placeholder="Enter your admin email"
+                  placeholder="njuguna.0299123@student.egerton.ac.ke"
                   value={resetEmail}
                   onChange={(e) => setResetEmail(e.target.value)}
                   className="pl-10"
@@ -416,7 +416,7 @@ export default function AdminAuthForm() {
               <Label htmlFor="admin-email">Email</Label>
               <div className="relative">
                 <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input id="admin-email" type="email" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} className="pl-10" required />
+                <Input id="admin-email" type="email" placeholder="njuguna.0299123@student.egerton.ac.ke" value={email} onChange={(e) => setEmail(e.target.value)} className="pl-10" required />
               </div>
             </div>
             <Button type="submit" className="w-full gap-2" disabled={loading}>

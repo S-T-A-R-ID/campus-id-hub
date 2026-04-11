@@ -232,12 +232,12 @@ export default function StudentAuthForm() {
   if (isForgotPassword) {
     return (
       <Card className="border-0 shadow-xl">
-        <CardHeader className="space-y-1 pb-4">
-          <CardTitle className="text-2xl">Reset Password</CardTitle>
+        <CardHeader className="space-y-1 p-4 pb-3 sm:p-6 sm:pb-4">
+          <CardTitle className="text-xl sm:text-2xl">Reset Password</CardTitle>
           <CardDescription>Enter your university email and we'll send you a reset link</CardDescription>
         </CardHeader>
-        <CardContent>
-          <form onSubmit={handleForgotPassword} className="space-y-4">
+        <CardContent className="p-4 pt-0 sm:p-6 sm:pt-0">
+          <form onSubmit={handleForgotPassword} className="space-y-3 sm:space-y-4">
             <div className="space-y-2">
               <Label htmlFor="reset-email">University Email</Label>
               <div className="relative">
@@ -245,7 +245,7 @@ export default function StudentAuthForm() {
                 <Input
                   id="reset-email"
                   type="email"
-                  placeholder="lastname.digits@student.egerton.ac.ke"
+                  placeholder="njuguna.0299123@student.egerton.ac.ke"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="pl-10"
@@ -261,7 +261,7 @@ export default function StudentAuthForm() {
               )}
             </Button>
           </form>
-          <div className="mt-6 text-center">
+          <div className="mt-4 text-center sm:mt-6">
             <button onClick={() => setIsForgotPassword(false)} className="text-primary font-medium hover:underline inline-flex items-center gap-1 text-sm">
               <ArrowLeft className="h-3 w-3" /> Back to Sign In
             </button>
@@ -275,12 +275,12 @@ export default function StudentAuthForm() {
   if (isLogin) {
     return (
       <Card className="border-0 shadow-xl">
-        <CardHeader className="space-y-1 pb-4">
-          <CardTitle className="text-2xl">Welcome Back</CardTitle>
+        <CardHeader className="space-y-1 p-4 pb-3 sm:p-6 sm:pb-4">
+          <CardTitle className="text-xl sm:text-2xl">Welcome Back</CardTitle>
           <CardDescription>Sign in with your university email</CardDescription>
         </CardHeader>
-        <CardContent>
-          <form onSubmit={handleLogin} className="space-y-4">
+        <CardContent className="p-4 pt-0 sm:p-6 sm:pt-0">
+          <form onSubmit={handleLogin} className="space-y-3 sm:space-y-4">
             <div className="space-y-2">
               <Label htmlFor="student-email">University Email</Label>
               <div className="relative">
@@ -288,7 +288,7 @@ export default function StudentAuthForm() {
                 <Input
                   id="student-email"
                   type="email"
-                  placeholder="lastname.digits@student.egerton.ac.ke"
+                  placeholder="njuguna.0299123@student.egerton.ac.ke"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="pl-10"
@@ -328,7 +328,7 @@ export default function StudentAuthForm() {
               )}
             </Button>
           </form>
-          <div className="mt-6 text-center text-sm">
+          <div className="mt-4 text-center text-sm sm:mt-6">
             <span className="text-muted-foreground">Don't have an account?</span>{" "}
             <button onClick={() => setIsLogin(false)} className="text-primary font-medium hover:underline">Sign up</button>
           </div>
