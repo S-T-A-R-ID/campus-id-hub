@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { toast } from "sonner";
 import { Lock, Eye, EyeOff, ArrowRight, GraduationCap, Mail } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { setPortalMode } from "@/lib/portalMode";
 
 export default function ResetPassword() {
   const authRedirectBaseUrl = (import.meta.env.VITE_AUTH_REDIRECT_BASE_URL || window.location.origin).replace(/\/$/, "");
@@ -16,6 +17,7 @@ export default function ResetPassword() {
   const [showConfirm, setShowConfirm] = useState(false);
   const [loading, setLoading] = useState(false);
   const [ready, setReady] = useState(false);
+  const [sessionReady, setSessionReady] = useState(false);
   const [invalidReason, setInvalidReason] = useState("");
   const [resetEmail, setResetEmail] = useState("");
   const [resendLoading, setResendLoading] = useState(false);
@@ -23,10 +25,76 @@ export default function ResetPassword() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Listen for the PASSWORD_RECOVERY event
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
-      if (event === "PASSWORD_RECOVERY") {
+    let mounted = true;
+
+    const restoreSessionFromUrl = async () => {
+      const url = new URL(window.location.href);
+      const hash = url.hash.replace(/^#/, "");
+      const fragment = new URLSearchParams(hash);
+      const accessToken = fragment.get("access_token");
+      const refreshToken = fragment.get("refresh_token");
+      const code = url.searchParams.get("code");
+      const tokenHash = url.searchParams.get("token_hash");
+      const linkType = (url.searchParams.get("type") || "recovery") as "recovery" | "magiclink" | "email";
+
+      if (accessToken && refreshToken) {
+        const { error } = await supabase.auth.setSession({
+          access_token: accessToken,
+          refresh_token: refreshToken,
+        });
+
+        if (!error && mounted) {
+          setReady(true);
+          setSessionReady(true);
+          window.history.replaceState({}, "", `${url.pathname}${url.search}`);
+          return;
+        }
+      }
+
+      if (code) {
+        const { error } = await supabase.auth.exchangeCodeForSession(code);
+        if (!error && mounted) {
+          setReady(true);
+          setSessionReady(true);
+          window.history.replaceState({}, "", url.pathname);
+          return;
+        }
+      }
+
+      if (tokenHash) {
+        const { error } = await supabase.auth.verifyOtp({
+          token_hash: tokenHash,
+          type: linkType,
+        });
+        if (!error && mounted) {
+          setReady(true);
+          setSessionReady(true);
+          window.history.replaceState({}, "", url.pathname);
+          return;
+        }
+      }
+
+      const { data } = await supabase.auth.getSession();
+      if (mounted && data.session) {
         setReady(true);
+        setSessionReady(true);
+        return;
+      }
+
+      // Supabase may finish URL session exchange asynchronously; give it one more brief pass.
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      const { data: retryData } = await supabase.auth.getSession();
+      if (mounted && retryData.session) {
+        setReady(true);
+        setSessionReady(true);
+      }
+    };
+
+    // Listen for the PASSWORD_RECOVERY event
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if ((event === "PASSWORD_RECOVERY" || event === "SIGNED_IN") && session) {
+        setReady(true);
+        setSessionReady(true);
       }
     });
     // Also check hash for type=recovery
@@ -42,7 +110,12 @@ export default function ResetPassword() {
       setInvalidReason(cleanDescription);
     }
 
-    return () => subscription.unsubscribe();
+    void restoreSessionFromUrl();
+
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   useEffect(() => {
@@ -74,7 +147,7 @@ export default function ResetPassword() {
       if (error) throw error;
 
       setResendCooldown(60);
-      toast.success("A new reset link has been sent. Use the latest email.");
+      toast.success("A new reset link has been sent. Open only the latest reset email.");
     } catch (error: any) {
       toast.error(error?.message || "Failed to send reset link");
     } finally {
@@ -94,8 +167,16 @@ export default function ResetPassword() {
     }
     setLoading(true);
     try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (!sessionData.session) {
+        setSessionReady(false);
+        setReady(false);
+        throw new Error("Reset link expired or invalid. Request a new reset link.");
+      }
+
       const { error } = await supabase.auth.updateUser({ password });
       if (error) throw error;
+      setPortalMode("student");
       toast.success("Password updated successfully!");
       navigate("/dashboard");
     } catch (error: any) {
@@ -105,7 +186,7 @@ export default function ResetPassword() {
     }
   };
 
-  if (!ready) {
+  if (!ready || !sessionReady) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background p-8">
         <Card className="w-full max-w-md border-0 shadow-xl">
@@ -115,6 +196,7 @@ export default function ResetPassword() {
             <CardDescription>
               This password reset link is invalid or has expired. Request a new one below.
             </CardDescription>
+            <p className="text-xs text-muted-foreground">Tip: request one link only, then open the newest email first.</p>
             {invalidReason && (
               <p className="text-xs text-muted-foreground">Reason: {invalidReason}</p>
             )}

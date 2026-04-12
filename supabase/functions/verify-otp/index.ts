@@ -7,13 +7,6 @@ const corsHeaders = {
 
 const MAX_OTP_ATTEMPTS = 5
 
-async function hashOtp(otp: string): Promise<string> {
-  const encoder = new TextEncoder()
-  const data = encoder.encode(otp)
-  const hashBuffer = await crypto.subtle.digest('SHA-256', data)
-  return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('')
-}
-
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
@@ -84,72 +77,30 @@ Deno.serve(async (req) => {
       .update({ attempts: otpRecord.attempts + 1 })
       .eq('id', otpRecord.id)
 
-    // Verify OTP against stored hash
-    const inputHash = await hashOtp(token)
-    
-    if (!otpRecord.otp_hash || inputHash !== otpRecord.otp_hash) {
+    // Verify OTP against Supabase email OTP token that was sent to the user.
+    const tempClient = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_ANON_KEY')!
+    )
+
+    const { data: verifyData, error: verifyError } = await tempClient.auth.verifyOtp({
+      email: normalizedEmail,
+      token,
+      type: 'email',
+    })
+
+    if (verifyError || !verifyData.session) {
       const remainingAttempts = MAX_OTP_ATTEMPTS - (otpRecord.attempts + 1)
-      return new Response(JSON.stringify({ 
-        error: `Invalid verification code. ${remainingAttempts > 0 ? `${remainingAttempts} attempt(s) remaining.` : 'No attempts remaining.'}` 
+      return new Response(JSON.stringify({
+        error: `Invalid verification code. ${remainingAttempts > 0 ? `${remainingAttempts} attempt(s) remaining.` : 'No attempts remaining.'}`
       }), {
         status: 401,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
     }
 
-    // Mark OTP as used (invalidate immediately after success)
+    // Mark OTP tracking record as used on successful verification.
     await supabaseAdmin.from('otp_codes').update({ is_used: true }).eq('id', otpRecord.id)
-
-    // Generate a session for the user via admin API
-    // First find the user by email
-    const { data: userData } = await supabaseAdmin.auth.admin.listUsers()
-    const authUser = userData?.users?.find(u => u.email?.toLowerCase() === normalizedEmail)
-
-    if (!authUser) {
-      return new Response(JSON.stringify({ error: 'User not found' }), {
-        status: 404,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      })
-    }
-
-    // Generate a magic link to create a session (used internally)
-    const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
-      type: 'magiclink',
-      email: normalizedEmail,
-    })
-
-    if (linkError || !linkData) {
-      return new Response(JSON.stringify({ error: 'Failed to create session' }), {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      })
-    }
-
-    // Use the token from the generated link to verify and get a session
-    const tempClient = createClient(
-      Deno.env.get('SUPABASE_URL')!,
-      Deno.env.get('SUPABASE_ANON_KEY')!
-    )
-
-    const tokenHash = linkData.properties?.hashed_token
-    if (!tokenHash) {
-      return new Response(JSON.stringify({ error: 'Failed to create session' }), {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      })
-    }
-
-    const { data: verifyData, error: verifyError } = await tempClient.auth.verifyOtp({
-      token_hash: tokenHash,
-      type: 'magiclink',
-    })
-
-    if (verifyError || !verifyData.session) {
-      return new Response(JSON.stringify({ error: 'Failed to create session' }), {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      })
-    }
 
     // Return session tokens
     return new Response(JSON.stringify({

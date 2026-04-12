@@ -33,12 +33,13 @@ export default function AppSidebar({ onClose }: { onClose?: () => void }) {
   const navigate = useNavigate();
   const location = useLocation();
   const isMobile = useIsMobile();
+  const isAdminRoute = location.pathname.startsWith("/admin");
 
-  const links = isAdmin
+  const links = isAdminRoute && isAdmin
     ? [...adminLinks, ...(isSuperAdmin ? superAdminLinks : [])]
     : studentLinks;
-  const sectionLabel = isSuperAdmin ? "Super Admin" : isAdmin ? "Admin" : "Student";
-  const sidebarNameFallback = isSuperAdmin ? "Super Admin" : isAdmin ? "Admin" : "Student";
+  const sectionLabel = isAdminRoute ? (isSuperAdmin ? "Super Admin" : "Admin") : "Student";
+  const sidebarNameFallback = isAdminRoute ? (isSuperAdmin ? "Super Admin" : "Admin") : "Student";
 
   const handleNav = (to: string) => {
     navigate(to);

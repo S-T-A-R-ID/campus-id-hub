@@ -82,15 +82,41 @@ Deno.serve(async (req) => {
       })
     }
 
+    if (!userData.user.email_confirmed_at) {
+      return new Response(JSON.stringify({
+        error: 'Please verify your email first. Check your inbox for the confirmation link.'
+      }), {
+        status: 403,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
+
     // Record successful attempt
     await supabaseAdmin.from('login_attempts').insert({
       identifier: `admin:${pinData.user_id}`,
       success: true,
     })
 
-    // Return verified status - no session creation, OTP will handle that
+    const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
+      type: 'magiclink',
+      email: userData.user.email!,
+      options: {
+        redirectTo: `${Deno.env.get('AUTH_REDIRECT_BASE_URL') || 'http://localhost:3000'}/auth?portal=admin`,
+      },
+    })
+
+    const tokenHash = linkData?.properties?.hashed_token
+    if (linkError || !tokenHash) {
+      return new Response(JSON.stringify({ error: 'Failed to create admin session' }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
+
+    // Return token hash so client can exchange it for a session via verifyOtp.
     return new Response(JSON.stringify({
       verified: true,
+      token_hash: tokenHash,
       email: userData.user.email,
       pin_changed: pinData.pin_changed ?? false,
     }), {

@@ -27,7 +27,6 @@ export default function AdminAuthForm() {
   const [newPin, setNewPin] = useState("");
   const [confirmPin, setConfirmPin] = useState("");
   const [pinResetSuccess, setPinResetSuccess] = useState(false);
-  const [needsPinChange, setNeedsPinChange] = useState(false);
 
   const handlePinLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -61,15 +60,9 @@ export default function AdminAuthForm() {
         throw new Error("PIN verified, but password sign-in failed. Run the SQL sync script to align admin PIN and auth password.");
       }
 
-      setNeedsPinChange(!row.pin_changed);
       localStorage.setItem(PORTAL_MODE_KEY, "admin");
       toast.success("Welcome back, Admin!");
-
-      if (!row.pin_changed) {
-        navigate("/change-pin", { replace: true });
-      } else {
-        navigate("/admin", { replace: true });
-      }
+      navigate("/admin", { replace: true });
     } catch (error: any) {
       toast.error(error.message);
     } finally {

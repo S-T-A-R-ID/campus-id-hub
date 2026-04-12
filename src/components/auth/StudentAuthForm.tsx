@@ -8,10 +8,10 @@ import { toast } from "sonner";
 import { Mail, Lock, User, ArrowRight, Eye, EyeOff, ArrowLeft, Hash } from "lucide-react";
 import PasswordStrengthIndicator from "./PasswordStrengthIndicator";
 import { validateStudentName, validateRegNumber, generateStudentEmail } from "@/lib/validators";
+import { setPortalMode } from "@/lib/portalMode";
 
 export default function StudentAuthForm() {
   const authRedirectBaseUrl = (import.meta.env.VITE_AUTH_REDIRECT_BASE_URL || window.location.origin).replace(/\/$/, "");
-  const PORTAL_MODE_KEY = "star_id_portal_mode";
   const RESEND_COOLDOWN_SECONDS = 60;
   const [isLogin, setIsLogin] = useState(true);
   const [isForgotPassword, setIsForgotPassword] = useState(false);
@@ -101,21 +101,27 @@ export default function StudentAuthForm() {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email.endsWith("@student.egerton.ac.ke")) {
+    const normalizedEmail = email.trim().toLowerCase();
+    if (!normalizedEmail.endsWith("@student.egerton.ac.ke")) {
       toast.error("Please use your @student.egerton.ac.ke email address");
       return;
     }
     setLoading(true);
     try {
       const { error } = await supabase.auth.signInWithPassword({
-        email,
+        email: normalizedEmail,
         password,
       });
       if (error) throw error;
-      localStorage.setItem(PORTAL_MODE_KEY, "student");
+      setPortalMode("student");
       toast.success("Welcome back!");
     } catch (error: any) {
-      toast.error(error.message || "Login failed");
+      const message = String(error?.message || "").toLowerCase();
+      if (message.includes("invalid login credentials")) {
+        toast.error("Invalid credentials. Use Forgot password to request one fresh reset link, then open the newest email.");
+      } else {
+        toast.error(error.message || "Login failed");
+      }
     } finally {
       setLoading(false);
     }

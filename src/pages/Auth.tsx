@@ -12,6 +12,16 @@ export default function Auth() {
   const [searchParams] = useSearchParams();
   const isAdminPortal = useMemo(() => searchParams.get("portal") === "admin", [searchParams]);
 
+  if (isAdminPortal) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background p-4">
+        <div className="w-full max-w-md animate-fade-in">
+          <AdminAuthForm />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="auth-static-container flex h-[100dvh] overflow-hidden lg:min-h-screen lg:h-auto">
       {/* Left Panel - Branding */}

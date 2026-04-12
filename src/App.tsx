@@ -3,12 +3,13 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useSearchParams } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/lib/auth";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import AppLayout from "@/components/AppLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { getPortalMode, type PortalMode } from "@/lib/portalMode";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import Application from "./pages/Application";
@@ -23,16 +24,13 @@ import LostIDManagement from "./pages/admin/LostIDManagement";
 import AdminApproval from "./pages/admin/AdminApproval";
 import Verify from "./pages/Verify";
 import ResetPassword from "./pages/ResetPassword";
-import ChangePin from "./pages/ChangePin";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
-const PORTAL_MODE_KEY = "star_id_portal_mode";
 
-function getLandingPath(isAdmin: boolean) {
-  if (!isAdmin) return "/dashboard";
-  const mode = localStorage.getItem(PORTAL_MODE_KEY);
-  return mode === "admin" ? "/admin" : "/dashboard";
+function getLandingPath(isAdmin: boolean, portalMode: PortalMode | null) {
+  if (isAdmin && portalMode === "admin") return "/admin";
+  return "/dashboard";
 }
 
 function FullScreenLoader({ label }: { label: string }) {
@@ -47,8 +45,14 @@ function FullScreenLoader({ label }: { label: string }) {
 }
 
 function AuthRedirect() {
-  const { user, loading, isAdmin, roleLoaded } = useAuth();
-  const [signingOut] = useState(false);
+  const { user, loading, isAdmin, roleLoaded, signOut } = useAuth();
+  const [searchParams] = useSearchParams();
+  const portalMode = getPortalMode();
+  const requestedPortal = searchParams.get("portal") === "admin"
+    ? "admin"
+    : searchParams.get("portal") === "student"
+      ? "student"
+      : null;
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event) => {
@@ -66,19 +70,26 @@ function AuthRedirect() {
     return () => subscription.unsubscribe();
   }, []);
 
-  if (signingOut) return <FullScreenLoader label="Signing out..." />;
   if (loading) return <FullScreenLoader label="Loading..." />;
   if (user && !roleLoaded) return <FullScreenLoader label="Checking access..." />;
-  if (user) return <Navigate to={getLandingPath(isAdmin)} replace />;
+  if (user) {
+    if (requestedPortal === "admin") {
+      if (portalMode === "admin" && isAdmin) return <Navigate to="/admin" replace />;
+      return <Auth />;
+    }
+    if (requestedPortal === "student") return <Navigate to="/dashboard" replace />;
+    return <Navigate to={getLandingPath(isAdmin, portalMode)} replace />;
+  }
   return <Auth />;
 }
 
 function RootRedirect() {
   const { user, loading, isAdmin, roleLoaded } = useAuth();
+  const portalMode = getPortalMode();
   if (loading) return <FullScreenLoader label="Loading..." />;
   if (user && !roleLoaded) return <FullScreenLoader label="Checking access..." />;
   if (!user) return <Navigate to="/auth" replace />;
-  return <Navigate to={getLandingPath(isAdmin)} replace />;
+  return <Navigate to={getLandingPath(isAdmin, portalMode)} replace />;
 }
 
 const App = () => (
@@ -93,9 +104,8 @@ const App = () => (
             <Route path="/auth" element={<AuthRedirect />} />
             <Route path="/verify/:id" element={<Verify />} />
             <Route path="/reset-password" element={<ResetPassword />} />
-            <Route path="/change-pin" element={<ProtectedRoute><ChangePin /></ProtectedRoute>} />
             
-            <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
+            <Route element={<ProtectedRoute studentOnly><AppLayout /></ProtectedRoute>}>
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/application" element={<Application />} />
               <Route path="/virtual-id" element={<VirtualID />} />

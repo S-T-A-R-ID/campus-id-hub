@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Outlet } from "react-router-dom";
+import { Outlet, useLocation } from "react-router-dom";
 import AppSidebar from "./AppSidebar";
 import { Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -9,10 +9,14 @@ import NotificationsDropdown from "./NotificationsDropdown";
 
 export default function AppLayout() {
   const { profile, isAdmin, isSuperAdmin } = useAuth();
+  const location = useLocation();
   const isMobile = useIsMobile();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const isAdminRoute = location.pathname.startsWith("/admin");
 
-  const fallbackName = isSuperAdmin ? "Super Admin" : isAdmin ? "Admin" : "Student";
+  const fallbackName = isAdminRoute
+    ? (isSuperAdmin ? "Super Admin" : isAdmin ? "Admin" : "Admin")
+    : "Student";
 
   return (
     <div className="flex h-screen overflow-hidden">
