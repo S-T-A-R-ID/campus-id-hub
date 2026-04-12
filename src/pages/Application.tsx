@@ -154,8 +154,8 @@ export default function Application() {
       toast.error("Please upload a passport photo first");
       return;
     }
-    if (!form.reg_number || !form.faculty || !form.course || !form.full_name) {
-      toast.error("Please complete all required fields");
+    if (!form.reg_number || !form.faculty || !form.course || !form.full_name || !form.department || !form.year_of_study || !form.phone) {
+      toast.error("Please complete all required fields before submitting");
       return;
     }
 
