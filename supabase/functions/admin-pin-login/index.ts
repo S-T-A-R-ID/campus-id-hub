@@ -88,11 +88,59 @@ Deno.serve(async (req) => {
       success: true,
     })
 
-    // Return verified status - no session creation, OTP will handle that
+    if (!userData.user.email) {
+      return new Response(JSON.stringify({ error: 'User email not found' }), {
+        status: 404,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
+
+    // Create a session directly after successful PIN validation.
+    const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
+      type: 'magiclink',
+      email: userData.user.email,
+    })
+
+    if (linkError || !linkData) {
+      return new Response(JSON.stringify({ error: 'Failed to create session' }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
+
+    const tokenHash = linkData.properties?.hashed_token
+    if (!tokenHash) {
+      return new Response(JSON.stringify({ error: 'Failed to create session' }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
+
+    const tempClient = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_ANON_KEY')!
+    )
+
+    const { data: verifyData, error: verifyError } = await tempClient.auth.verifyOtp({
+      token_hash: tokenHash,
+      type: 'magiclink',
+    })
+
+    if (verifyError || !verifyData.session) {
+      return new Response(JSON.stringify({ error: 'Failed to create session' }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
+
     return new Response(JSON.stringify({
       verified: true,
       email: userData.user.email,
       pin_changed: pinData.pin_changed ?? false,
+      session: {
+        access_token: verifyData.session.access_token,
+        refresh_token: verifyData.session.refresh_token,
+      },
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })

@@ -5,8 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
-import { Mail, Lock, User, ArrowRight, Eye, EyeOff, ArrowLeft, ShieldCheck, Hash } from "lucide-react";
-import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
+import { Mail, Lock, User, ArrowRight, Eye, EyeOff, ArrowLeft, Hash } from "lucide-react";
 import PasswordStrengthIndicator from "./PasswordStrengthIndicator";
 import { validateStudentName, validateRegNumber, generateStudentEmail } from "@/lib/validators";
 
@@ -25,11 +24,6 @@ export default function StudentAuthForm() {
   const [regNumber, setRegNumber] = useState("");
   const [regPassword, setRegPassword] = useState("");
   const [showRegPassword, setShowRegPassword] = useState(false);
-
-  // OTP 2FA state
-  const [otpStep, setOtpStep] = useState(false);
-  const [otpEmail, setOtpEmail] = useState("");
-  const [otp, setOtp] = useState("");
 
   // Derived email from name + reg number
   const generatedEmail = useMemo(() => {
@@ -63,33 +57,6 @@ export default function StudentAuthForm() {
     }
   };
 
-  const handleVerifyOtp = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (otp.length !== 6) {
-      toast.error("Please enter the 6-digit code");
-      return;
-    }
-    setLoading(true);
-    try {
-      const { data, error } = await supabase.functions.invoke("verify-otp", {
-        body: { email: otpEmail, token: otp },
-      });
-      if (error) throw new Error(data?.error || "Verification failed");
-      if (data?.error) throw new Error(data.error);
-      if (data?.session) {
-        await supabase.auth.setSession({
-          access_token: data.session.access_token,
-          refresh_token: data.session.refresh_token,
-        });
-      }
-      toast.success("Welcome back!");
-    } catch (error: any) {
-      toast.error(error.message || "Invalid or expired verification code");
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email.endsWith("@student.egerton.ac.ke")) {
@@ -98,21 +65,12 @@ export default function StudentAuthForm() {
     }
     setLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke("verify-credentials", {
-        body: { email, password },
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
       });
-      if (error) throw new Error(data?.error || "Login failed");
-      if (data?.error) throw new Error(data.error);
-
-      const { data: otpData, error: otpError } = await supabase.functions.invoke("send-otp", {
-        body: { email },
-      });
-      if (otpError) throw new Error(otpData?.error || "Failed to send verification code");
-      if (otpData?.error) throw new Error(otpData.error);
-
-      setOtpEmail(email);
-      setOtpStep(true);
-      toast.success("A 6-digit verification code has been sent to your email!");
+      if (error) throw error;
+      toast.success("Welcome back!");
     } catch (error: any) {
       toast.error(error.message);
     } finally {
@@ -172,61 +130,6 @@ export default function StudentAuthForm() {
       setLoading(false);
     }
   };
-
-  // OTP verification screen
-  if (otpStep) {
-    return (
-      <Card className="border-0 shadow-xl">
-        <CardHeader className="space-y-1 pb-4 text-center">
-          <div className="mx-auto mb-2 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
-            <ShieldCheck className="h-8 w-8 text-primary" />
-          </div>
-          <CardTitle className="text-2xl">Two-Factor Verification</CardTitle>
-          <CardDescription>
-            A 6-digit verification code has been sent to <strong>{otpEmail}</strong>. Enter it below to complete sign in.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleVerifyOtp} className="space-y-6">
-            <div className="flex justify-center">
-              <InputOTP maxLength={6} value={otp} onChange={setOtp}>
-                <InputOTPGroup>
-                  <InputOTPSlot index={0} />
-                  <InputOTPSlot index={1} />
-                  <InputOTPSlot index={2} />
-                  <InputOTPSlot index={3} />
-                  <InputOTPSlot index={4} />
-                  <InputOTPSlot index={5} />
-                </InputOTPGroup>
-              </InputOTP>
-            </div>
-            <p className="text-xs text-muted-foreground text-center">
-              Code expires in 5 minutes. Check your spam folder if you don't see it.
-            </p>
-            <Button type="submit" className="w-full gap-2" disabled={loading || otp.length !== 6}>
-              {loading ? (
-                <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent" />
-              ) : (
-                <>
-                  Verify & Sign In
-                  <ArrowRight className="h-4 w-4" />
-                </>
-              )}
-            </Button>
-            <div className="text-center">
-              <button
-                type="button"
-                onClick={() => { setOtpStep(false); setOtp(""); }}
-                className="text-sm text-muted-foreground hover:text-primary hover:underline inline-flex items-center gap-1"
-              >
-                <ArrowLeft className="h-3 w-3" /> Back to login
-              </button>
-            </div>
-          </form>
-        </CardContent>
-      </Card>
-    );
-  }
 
   // Forgot password screen
   if (isForgotPassword) {
