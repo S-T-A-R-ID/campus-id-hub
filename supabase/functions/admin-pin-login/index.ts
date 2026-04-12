@@ -23,10 +23,11 @@ Deno.serve(async (req) => {
       })
     }
 
-    const supabaseAdmin = createClient(
-      Deno.env.get('SUPABASE_URL')!,
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-    )
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!
+    const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+    const anonKey = Deno.env.get('SUPABASE_ANON_KEY')!
+
+    const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey)
 
     // Look up PIN
     const { data: pinData, error: pinError } = await supabaseAdmin
@@ -36,7 +37,6 @@ Deno.serve(async (req) => {
       .single()
 
     if (pinError || !pinData) {
-      // Record failed attempt with generic identifier
       await supabaseAdmin.from('login_attempts').insert({
         identifier: `pin:${pin.substring(0, 2)}**`,
         success: false,
@@ -47,7 +47,7 @@ Deno.serve(async (req) => {
       })
     }
 
-    // Check rate limiting for this user
+    // Check rate limiting
     const cutoff = new Date(Date.now() - LOCKOUT_MINUTES * 60 * 1000).toISOString()
     const { data: failedAttempts } = await supabaseAdmin
       .from('login_attempts')
@@ -75,7 +75,8 @@ Deno.serve(async (req) => {
     // Get user email
     const { data: userData, error: userError } = await supabaseAdmin.auth.admin.getUserById(pinData.user_id)
 
-    if (userError || !userData.user) {
+    if (userError || !userData.user?.email) {
+      console.error('User lookup failed:', userError?.message)
       return new Response(JSON.stringify({ error: 'User not found' }), {
         status: 404,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -88,20 +89,14 @@ Deno.serve(async (req) => {
       success: true,
     })
 
-    if (!userData.user.email) {
-      return new Response(JSON.stringify({ error: 'User email not found' }), {
-        status: 404,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      })
-    }
-
-    // Create a session directly after successful PIN validation.
+    // Generate magic link and verify to create session
     const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
       type: 'magiclink',
       email: userData.user.email,
     })
 
     if (linkError || !linkData) {
+      console.error('generateLink failed:', linkError?.message)
       return new Response(JSON.stringify({ error: 'Failed to create session' }), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -110,24 +105,23 @@ Deno.serve(async (req) => {
 
     const tokenHash = linkData.properties?.hashed_token
     if (!tokenHash) {
+      console.error('No hashed_token in link properties:', JSON.stringify(linkData.properties))
       return new Response(JSON.stringify({ error: 'Failed to create session' }), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
     }
 
-    const tempClient = createClient(
-      Deno.env.get('SUPABASE_URL')!,
-      Deno.env.get('SUPABASE_ANON_KEY')!
-    )
-
+    // Use anon client to verify OTP and get session
+    const tempClient = createClient(supabaseUrl, anonKey)
     const { data: verifyData, error: verifyError } = await tempClient.auth.verifyOtp({
       token_hash: tokenHash,
       type: 'magiclink',
     })
 
     if (verifyError || !verifyData.session) {
-      return new Response(JSON.stringify({ error: 'Failed to create session' }), {
+      console.error('verifyOtp failed:', verifyError?.message, 'session:', verifyData?.session ? 'present' : 'null')
+      return new Response(JSON.stringify({ error: 'Failed to create session. Please try again.' }), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
@@ -145,6 +139,7 @@ Deno.serve(async (req) => {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
   } catch (error) {
+    console.error('Unhandled error:', error?.message || error)
     return new Response(JSON.stringify({ error: 'Internal server error' }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
