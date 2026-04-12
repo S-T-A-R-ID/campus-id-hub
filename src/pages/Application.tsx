@@ -242,17 +242,13 @@ export default function Application() {
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">
               <Label>Full Name *</Label>
-              <Input value={form.full_name} onChange={(e) => setForm({ ...form, full_name: e.target.value })} disabled={!!alreadySubmitted} />
-              {form.full_name && !validateStudentName(form.full_name).valid && (
-                <p className="text-xs text-destructive">{validateStudentName(form.full_name).error}</p>
-              )}
+              <Input value={form.full_name} readOnly disabled className="bg-muted" />
+              <p className="text-xs text-muted-foreground">Auto-filled from your registration</p>
             </div>
             <div className="space-y-2">
               <Label>Registration Number *</Label>
-              <Input placeholder="e.g. S13/02928/23" value={form.reg_number} onChange={(e) => setForm({ ...form, reg_number: e.target.value })} disabled={!!alreadySubmitted} />
-              {form.reg_number && !validateRegNumber(form.reg_number).valid && (
-                <p className="text-xs text-destructive">{validateRegNumber(form.reg_number).error}</p>
-              )}
+              <Input value={form.reg_number} readOnly disabled className="bg-muted" />
+              <p className="text-xs text-muted-foreground">Auto-filled from your registration</p>
             </div>
             <div className="space-y-2">
               <Label>Faculty *</Label>
