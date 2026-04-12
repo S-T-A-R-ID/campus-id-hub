@@ -277,7 +277,7 @@ export default function Application() {
               </Select>
             </div>
             <div className="space-y-2">
-              <Label>Year of Study</Label>
+              <Label>Year of Study *</Label>
               <Select value={form.year_of_study} onValueChange={(v) => setForm({ ...form, year_of_study: v })} disabled={!!alreadySubmitted}>
                 <SelectTrigger><SelectValue placeholder="Select year" /></SelectTrigger>
                 <SelectContent>
@@ -286,7 +286,7 @@ export default function Application() {
               </Select>
             </div>
             <div className="space-y-2">
-              <Label>Phone Number</Label>
+              <Label>Phone Number *</Label>
               <Input
                 placeholder="+254712345678"
                 value={form.phone}
