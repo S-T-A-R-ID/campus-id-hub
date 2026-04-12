@@ -8,9 +8,10 @@ import { toast } from "sonner";
 import { Lock, Eye, EyeOff, ArrowRight, GraduationCap, Mail } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { setPortalMode } from "@/lib/portalMode";
+import { frontendEnv } from "@/config/env";
 
 export default function ResetPassword() {
-  const authRedirectBaseUrl = (import.meta.env.VITE_AUTH_REDIRECT_BASE_URL || window.location.origin).replace(/\/$/, "");
+  const authRedirectBaseUrl = frontendEnv.authRedirectBaseUrl;
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);

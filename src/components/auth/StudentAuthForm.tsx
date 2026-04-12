@@ -9,9 +9,10 @@ import { Mail, Lock, User, ArrowRight, Eye, EyeOff, ArrowLeft, Hash } from "luci
 import PasswordStrengthIndicator from "./PasswordStrengthIndicator";
 import { validateStudentName, validateRegNumber, generateStudentEmail } from "@/lib/validators";
 import { setPortalMode } from "@/lib/portalMode";
+import { frontendEnv } from "@/config/env";
 
 export default function StudentAuthForm() {
-  const authRedirectBaseUrl = (import.meta.env.VITE_AUTH_REDIRECT_BASE_URL || window.location.origin).replace(/\/$/, "");
+  const authRedirectBaseUrl = frontendEnv.authRedirectBaseUrl;
   const RESEND_COOLDOWN_SECONDS = 60;
   const [isLogin, setIsLogin] = useState(true);
   const [isForgotPassword, setIsForgotPassword] = useState(false);

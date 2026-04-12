@@ -150,7 +150,9 @@ export default function Application() {
   };
 
   const handleSubmitApplication = async () => {
-    if (!user || !profile?.photo_url) {
+    const currentPhotoUrl = photoPreview || profile?.photo_url || null;
+
+    if (!user || !currentPhotoUrl) {
       toast.error("Please upload a passport photo first");
       return;
     }
@@ -164,7 +166,7 @@ export default function Application() {
 
     const { error } = await supabase.from("id_applications").insert({
       user_id: user.id,
-      photo_url: profile.photo_url,
+      photo_url: currentPhotoUrl,
       status: "submitted",
       submitted_at: new Date().toISOString(),
     });

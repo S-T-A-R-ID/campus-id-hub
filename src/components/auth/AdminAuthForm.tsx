@@ -8,10 +8,11 @@ import { toast } from "sonner";
 import { Mail, ArrowRight, CheckCircle2, ArrowLeft } from "lucide-react";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { useNavigate } from "react-router-dom";
+import { frontendEnv } from "@/config/env";
 
 type Mode = "pin_login" | "forgot_pin";
 
-const hasPlaceholderAnonKey = (import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || "")
+const hasPlaceholderAnonKey = (frontendEnv.supabasePublishableKey || "")
   .toString()
   .includes("PASTE_ANON_PUBLIC_KEY");
 

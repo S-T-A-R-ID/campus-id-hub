@@ -5,10 +5,17 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:frontend": "vite",
+    "dev:backend": "supabase start",
+    "dev:backend:functions": "supabase functions serve --env-file supabase/functions/.env.local",
     "build": "vite build",
+    "build:frontend": "vite build",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
     "preview": "vite preview",
+    "preview:frontend": "vite preview",
+    "backend:stop": "supabase stop",
+    "backend:db:push": "supabase db push",
     "test": "vitest run",
     "test:watch": "vitest"
   },
