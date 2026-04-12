@@ -44,16 +44,16 @@ export default function Application() {
 
   useEffect(() => {
     if (profile) {
-      setForm({
-        full_name: profile.full_name || "",
-        reg_number: profile.reg_number || "",
-        faculty: profile.faculty || "",
-        department: profile.department || "",
-        course: profile.course || "",
-        campus: profile.campus || "Main Campus",
-        year_of_study: profile.year_of_study?.toString() || "",
-        phone: profile.phone || "",
-      });
+      setForm((prev) => ({
+        full_name: profile.full_name || prev.full_name,
+        reg_number: profile.reg_number || prev.reg_number,
+        faculty: profile.faculty || prev.faculty,
+        department: profile.department || prev.department,
+        course: profile.course || prev.course,
+        campus: profile.campus || prev.campus || "Main Campus",
+        year_of_study: profile.year_of_study?.toString() || prev.year_of_study,
+        phone: profile.phone || prev.phone,
+      }));
       if (profile.photo_url) setPhotoPreview(profile.photo_url);
     }
   }, [profile]);
