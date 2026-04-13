@@ -1,4 +1,4 @@
-
+np
 -- Allow anonymous/public access to verify student IDs
 CREATE POLICY "Anyone can verify student IDs"
 ON public.id_applications
