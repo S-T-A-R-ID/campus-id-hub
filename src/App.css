@@ -1,0 +1,32 @@
+#root {
+  min-height: 100dvh;
+}
+
+@media (max-width: 1023px) {
+  .auth-static-container {
+    height: 100dvh;
+    overflow: hidden;
+  }
+
+  .auth-mobile-panel {
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+  }
+}
+
+@media (max-width: 1023px) and (max-height: 780px) {
+  .auth-mobile-hero {
+    display: none;
+  }
+
+  .auth-mobile-form {
+    transform: scale(0.94);
+    transform-origin: top center;
+  }
+}
+
+@media (max-width: 1023px) and (max-height: 700px) {
+  .auth-mobile-form {
+    transform: scale(0.9);
+  }
+}
